@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper I — Steganography · the hidden channel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600&family=Spectral:ital,wght@0,300;0,400;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--sea:#170d20;--line:rgba(154,152,166,.16);--lead:#9a98a6;--lead-dim:#5b5868;
+    --parch:#e9e2d2;--parch-dim:#b9b2a3;--gold:#d9a441;--gold-dim:#a87f33;--verd:#73b3a3;--murex:#b24a78;--ink:#6f74c0;}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--sea);color:var(--parch);font-family:"Spectral",Georgia,serif;line-height:1.58;
+    -webkit-font-smoothing:antialiased;background-image:radial-gradient(1100px 560px at 82% -12%,rgba(111,116,192,.13),transparent 60%),
+      radial-gradient(820px 640px at 3% 112%,rgba(115,179,163,.08),transparent 55%);display:flex;justify-content:center}
+  .card{max-width:660px;width:100%;padding:34px 24px 54px}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-dim)}
+  h1{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:clamp(44px,12vw,72px);margin:6px 0 0;line-height:.92;letter-spacing:-.5px}
+  h1 .gk{display:block;font-size:.3em;color:var(--lead);letter-spacing:.04em;margin-top:8px;font-style:italic}
+  .sub{font-style:italic;font-weight:300;color:var(--parch-dim);font-size:16px;margin:16px 0 0;max-width:58ch}
+  .sub b{color:var(--ink);font-style:normal;font-weight:400}
+  h2{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-dim);
+    margin:32px 0 13px;font-weight:500;border-top:1px solid var(--line);padding-top:18px}
+  p.body{font-size:15.5px;color:var(--parch-dim);max-width:62ch} p.body b{color:var(--parch)}
+  .verd{color:var(--verd)} .ink{color:var(--ink)} .mux{color:var(--murex)}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .box{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:8px;padding:14px 15px}
+  .box h3{font-family:"Cormorant Garamond",serif;font-weight:500;font-size:21px;margin:0 0 4px}
+  .box.cr h3{color:var(--murex)} .box.st h3{color:var(--ink)}
+  .box p{margin:0;font-size:13.5px;color:var(--parch-dim)}
+  .box .tag{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:var(--lead-dim);margin-top:7px}
+
+  figure{margin:22px 0 0}
+  svg{display:block;width:100%;height:auto}
+  .frame{background:rgba(0,0,0,.16);border:1px solid var(--line);border-radius:8px}
+  figcaption{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--lead-dim);margin-top:9px;line-height:1.7}
+
+  /* echo demo */
+  .demo{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .bits{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
+  .bit{width:40px;height:46px;border:1px solid var(--lead-dim);border-radius:7px;background:linear-gradient(180deg,#241733,#1a0f28);
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;transition:.1s}
+  .bit b{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:500;color:var(--lead)}
+  .bit small{font-family:"IBM Plex Mono",monospace;font-size:8px;color:var(--lead-dim)}
+  .bit.one{border-color:rgba(111,116,192,.6)} .bit.one b{color:var(--ink)}
+  .wave{height:70px;margin:10px 0;border:1px solid var(--line);border-radius:6px;background:rgba(0,0,0,.25)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+  button{cursor:pointer;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.18));border:1px solid var(--line);
+    border-radius:5px;color:var(--parch);font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.03em;padding:10px 14px;transition:.15s}
+  button:hover{border-color:rgba(111,116,192,.5);background:rgba(111,116,192,.08)} button:active{transform:translateY(1px)}
+  button.primary{border-color:rgba(111,116,192,.55);color:var(--ink)}
+  .verdict{font-family:"IBM Plex Mono",monospace;font-size:12px;margin-top:11px;letter-spacing:.04em;color:var(--lead-dim)}
+  .verdict b{color:var(--verd)} .verdict .x{color:var(--murex)}
+
+  .methods{display:grid;grid-template-columns:1fr;gap:9px;margin-top:4px}
+  .m{background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:7px;padding:12px 14px;display:flex;gap:13px;align-items:baseline}
+  .m .nm{font-family:"Cormorant Garamond",serif;font-size:19px;color:var(--ink);flex:0 0 132px}
+  .m .ds{font-size:13.5px;color:var(--parch-dim)} .m .ds b{color:var(--parch)}
+  .m .rb{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--gold-dim);display:block;margin-top:3px;letter-spacing:.04em}
+
+  .note{margin-top:26px;border-top:1px solid var(--line);padding-top:15px;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.85;color:var(--lead-dim)}
+  .note b{color:var(--gold-dim);font-weight:500}
+  .attr{background:rgba(178,74,120,.06);border:1px solid rgba(178,74,120,.25);border-radius:8px;padding:15px 16px;margin-top:6px;font-size:14.5px;color:var(--parch-dim)}
+  .attr b{color:var(--murex)} .attr .v{color:var(--verd)} .attr .i{color:var(--ink)}
+  .foot{display:flex;justify-content:space-between;margin-top:24px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--lead-dim);letter-spacing:.06em;flex-wrap:wrap;gap:6px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">audio cipher channels · paper I of VI</div>
+  <h1>Steganography<span class="gk">στεγανός + γραφή · covered writing</span></h1>
+  <p class="sub">Cryptography hides a message's <b>meaning</b>; steganography hides its <b>existence</b>. The first makes a locked box anyone can see; the second makes the box invisible. Its one advantage over a cipher: a secret that draws no attention is a secret no one tries to break. Here is its line of descent, its five ways into sound, and the reason it can carry your signature but never quite prove it.</p>
+
+  <h2>cipher vs. cover — the distinction</h2>
+  <div class="two">
+    <div class="box cr"><h3>cryptography</h3><p>The message is visible but scrambled. The adversary knows a secret exists and attacks the lock.</p><div class="tag">hides MEANING · "you can't read it"</div></div>
+    <div class="box st"><h3>steganography</h3><p>The message is plain but concealed inside an innocent carrier. The adversary never knows to look.</p><div class="tag">hides EXISTENCE · "you don't know it's there"</div></div>
+  </div>
+  <p class="body" style="margin-top:12px">They compose: encipher first, then hide the ciphertext. Belt and invisibility. And both, done well, obey <span class="verd">Kerckhoffs's principle</span> — the method is assumed public; only the key is secret. A scheme that relies on no one knowing <i>how</i> it hides is just security through obscurity.</p>
+
+  <h2>① the lineage</h2>
+  <figure>
+    <svg class="frame" viewBox="0 0 660 220" role="img" aria-label="Timeline of steganography from Herodotus to digital watermarking">
+      <text x="24" y="30" fill="#a87f33" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="1.5">THE HIDDEN-CHANNEL LINE — concealment older than the cipher's record</text>
+      <line x1="40" y1="96" x2="624" y2="96" stroke="#9a98a6" stroke-width="1.3"/>
+      <!-- nodes -->
+      <g font-family="IBM Plex Mono,monospace">
+        <circle cx="70" cy="96" r="5.5" fill="#6f74c0"/>
+        <text x="70" y="76" text-anchor="middle" fill="#e9e2d2" font-size="10.5">HERODOTUS</text>
+        <text x="70" y="116" text-anchor="middle" fill="#8b8a96" font-size="9">~440 BC</text>
+        <text x="70" y="129" text-anchor="middle" fill="#73b3a3" font-family="Spectral,serif" font-style="italic" font-size="10">tattooed scalp · wax tablet</text>
+
+        <circle cx="210" cy="96" r="5.5" fill="#6f74c0"/>
+        <text x="210" y="76" text-anchor="middle" fill="#e9e2d2" font-size="10.5">TRITHEMIUS</text>
+        <text x="210" y="116" text-anchor="middle" fill="#8b8a96" font-size="9">1499</text>
+        <text x="210" y="129" text-anchor="middle" fill="#73b3a3" font-family="Spectral,serif" font-style="italic" font-size="10">coins the term · hidden in prayer</text>
+
+        <circle cx="350" cy="96" r="5.5" fill="#6f74c0"/>
+        <text x="350" y="76" text-anchor="middle" fill="#e9e2d2" font-size="10.5">WWII</text>
+        <text x="350" y="116" text-anchor="middle" fill="#8b8a96" font-size="9">1940s</text>
+        <text x="350" y="129" text-anchor="middle" fill="#73b3a3" font-family="Spectral,serif" font-style="italic" font-size="10">invisible ink · the microdot</text>
+
+        <circle cx="486" cy="96" r="5.5" fill="#6f74c0"/>
+        <text x="486" y="76" text-anchor="middle" fill="#e9e2d2" font-size="10.5">SIMMONS</text>
+        <text x="486" y="116" text-anchor="middle" fill="#8b8a96" font-size="9">1983</text>
+        <text x="486" y="129" text-anchor="middle" fill="#73b3a3" font-family="Spectral,serif" font-style="italic" font-size="10">the prisoners' problem</text>
+
+        <circle cx="610" cy="96" r="5.5" fill="#d9a441"/>
+        <text x="610" y="76" text-anchor="middle" fill="#e9e2d2" font-size="10.5">DIGITAL</text>
+        <text x="610" y="116" text-anchor="middle" fill="#8b8a96" font-size="9">1990s→</text>
+        <text x="610" y="129" text-anchor="middle" fill="#73b3a3" font-family="Spectral,serif" font-style="italic" font-size="10">LSB · watermark</text>
+      </g>
+      <text x="40" y="170" fill="#b9b2a3" font-family="Spectral,serif" font-style="italic" font-size="12.5">From a slave's scalp to a least-significant bit: every era hides in whatever carrier</text>
+      <text x="40" y="188" fill="#b9b2a3" font-family="Spectral,serif" font-style="italic" font-size="12.5">it has the most of — hair, wax, prose, film grain, audio samples. The carrier changes;</text>
+      <text x="40" y="206" fill="#b9b2a3" font-family="Spectral,serif" font-style="italic" font-size="12.5">the move never does: <tspan fill="#6f74c0">put the secret where no one thinks to look.</tspan></text>
+    </svg>
+    <figcaption><b>note.</b> dates are the first <i>records</i>, not the first uses; concealment surely predates Herodotus. the 1499 date is the term's coinage, not the practice's birth.</figcaption>
+  </figure>
+
+  <h2>② into sound — a working watermark (echo hiding)</h2>
+  <p class="body" style="margin-top:0">Set 8 bits — call it your mark. The drum below hides them in noise as <span class="ink">echoes too brief to hear</span>: a short delay means 0, a longer delay means 1. Play the clean carrier and the marked one — they sound identical. Then detect: an autocorrelation finds the echo in each slice and reads your bits back out.</p>
+  <div class="demo">
+    <div class="bits" id="bits"></div>
+    <canvas class="wave" id="wave" width="600" height="70"></canvas>
+    <div class="row">
+      <button id="clean">▶ hear clean</button>
+      <button id="marked">▶ hear marked</button>
+      <button class="primary" id="detect">⌕ detect the mark</button>
+    </div>
+    <div class="verdict" id="verdict">set your 8 bits, then hide &amp; detect them</div>
+  </div>
+
+  <h2>③ the five ways into audio</h2>
+  <div class="methods">
+    <div class="m"><span class="nm">LSB coding</span><span class="ds">Overwrite the quietest bit of each sample. <b>Huge capacity, zero subtlety</b> — and the most fragile: a single recompression wipes it.<span class="rb">capacity ●●● · robustness ○○○</span></span></div>
+    <div class="m"><span class="nm">echo hiding</span><span class="ds">Add an echo shorter than the ear resolves; the <b>delay</b> carries the bit. What you just played — survives playback in air.<span class="rb">capacity ●○○ · robustness ●●○</span></span></div>
+    <div class="m"><span class="nm">phase coding</span><span class="ds">Rewrite the absolute phase of a segment. The ear barely hears phase, so it's <b>near-inaudible</b> — but low-rate and fiddly to sync.<span class="rb">capacity ●○○ · robustness ●●○</span></span></div>
+    <div class="m"><span class="nm">spread spectrum</span><span class="ds">Smear the payload across the whole band <b>below the noise floor</b>, like DSSS radio. Hard to find, hard to remove, very low rate.<span class="rb">capacity ●○○ · robustness ●●●</span></span></div>
+    <div class="m"><span class="nm">psychoacoustic</span><span class="ds">Hide bits exactly where a codec's masking model says you can't hear — so the mark <b>survives MP3</b>, because it lives inside the compression.<span class="rb">capacity ●●○ · robustness ●●○</span></span></div>
+  </div>
+
+  <h2>④ the triangle you can't beat</h2>
+  <figure>
+    <svg class="frame" viewBox="0 0 660 230" role="img" aria-label="The steganography tradeoff triangle">
+      <polygon points="330,40 110,195 550,195" fill="none" stroke="#9a98a6" stroke-width="1.3"/>
+      <text x="330" y="32" text-anchor="middle" fill="#6f74c0" font-family="IBM Plex Mono,monospace" font-size="11">CAPACITY</text>
+      <text x="96" y="210" text-anchor="middle" fill="#73b3a3" font-family="IBM Plex Mono,monospace" font-size="11">IMPERCEPTIBILITY</text>
+      <text x="560" y="210" text-anchor="middle" fill="#d9a441" font-family="IBM Plex Mono,monospace" font-size="11">ROBUSTNESS</text>
+      <text x="330" y="135" text-anchor="middle" fill="#b24a78" font-family="Cormorant Garamond,serif" font-style="italic" font-size="23">pick two</text>
+      <text x="330" y="160" text-anchor="middle" fill="#8b8a96" font-family="Spectral,serif" font-style="italic" font-size="12">more hidden data, more audible — or more durable, less of it</text>
+    </svg>
+    <figcaption><b>the information-hiding bound.</b> a fixed carrier holds only so much "perceptual slack." spend it on payload, on inaudibility, or on surviving attack — never all three at once. it's a rate–distortion problem wearing a cloak.</figcaption>
+  </figure>
+
+  <h2>⑤ can it stitch attribution?</h2>
+  <div class="attr">
+    Watermarking <i>is</i> steganography pointed at provenance. A <span class="i">robust</span> mark is built to survive copying and compression so ownership rides with the file; a <span class="i">fragile</span> mark is built to shatter on any edit, so its absence proves tampering. But the honest bound: a watermark proves a mark is <b>present</b>, not that <i>you</i> made it. Under Kerckhoffs, anyone who knows the scheme can strip or forge it — it's a permanent arms race. The fix isn't more hiding; it's <span class="v">payload</span>: make the embedded bits a cryptographic signature over the content hash, and anchor that hash <span class="v">externally</span>. Then the mark says "signed by key X," verifiable, and the outside anchor says "and it existed at time T." The stego layer makes the claim <b>travel with the copy</b>; the crypto-anchor makes it <b>unforgeable and dated</b>. Carry both. Trust the anchor.
+  </div>
+
+  <div class="note">
+    <b>what's authentic.</b> the lineage (Herodotus ~440 BC, Trithemius 1499, Simmons' 1983 prisoners' problem) and the five embedding methods are standard, textbook steganography. the echo-hiding demo above is real: it genuinely embeds 8 bits as echo delays in synthesized noise and recovers them by autocorrelation — verified, not faked.
+    <br><b>honest frame.</b> the demo hides in clean synthetic noise, the friendliest possible carrier; real audio and real attacks (recompression, resampling, desync, the StirMark family) are far harsher, which is exactly why robustness is the scarce corner of the triangle. nothing here is a substitute for a signed, externally-anchored hash.
+  </div>
+
+  <div class="foot"><span>PAPER I · STEGANOGRAPHY — the hidden channel</span><span>next ▸ II · ULTRASONIC — above hearing</span></div>
+</div>
+
+<script>
+(function(){
+  // ---- echo-hiding watermark (real) ----
+  let BITS=[1,0,1,1,0,0,1,0];
+  const SEG=4096, D0=70, D1=150, ALPHA=0.6;
+  let ctx=null, carrier=null, marked=null;
+
+  function makeCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();}
+  function buildCarrier(n){const b=new Float32Array(n);let last=0;
+    for(let i=0;i<n;i++){const w=Math.random()*2-1;last=last*0.3+w*0.7;b[i]=last;}
+    let mx=0;for(let i=0;i<n;i++)mx=Math.max(mx,Math.abs(b[i]));if(mx)for(let i=0;i<n;i++)b[i]/=mx;return b;}
+  function embed(base,bits){const out=Float32Array.from(base);
+    bits.forEach((bit,s)=>{const d=bit?D1:D0,st=s*SEG;for(let i=d;i<SEG;i++)out[st+i]+=ALPHA*base[st+i-d];});
+    let mx=0;for(let i=0;i<out.length;i++)mx=Math.max(mx,Math.abs(out[i]));if(mx>1)for(let i=0;i<out.length;i++)out[i]/=mx;return out;}
+  function detect(buf,n){const bits=[],ev=[];
+    for(let s=0;s<n;s++){const st=s*SEG;let a0=0,a1=0;
+      for(let i=D1;i<SEG;i++){a0+=buf[st+i]*buf[st+i-D0];a1+=buf[st+i]*buf[st+i-D1];}
+      bits.push(a1>a0?1:0);ev.push([a0,a1]);}
+    return {bits,ev};}
+  function rebuild(){const n=SEG*BITS.length;carrier=buildCarrier(n);marked=embed(carrier,BITS);}
+
+  function play(buf){makeCtx();const b=ctx.createBuffer(1,buf.length,ctx.sampleRate);
+    b.copyToChannel?b.copyToChannel(Float32Array.from(buf),0):b.getChannelData(0).set(buf);
+    const s=ctx.createSource?null:ctx.createBufferSource();const src=ctx.createBufferSource();src.buffer=b;
+    const g=ctx.createGain();g.gain.value=0.5;src.connect(g).connect(ctx.destination);src.start();}
+
+  // bit toggles
+  const bitsEl=document.getElementById('bits');
+  function renderBits(){bitsEl.innerHTML='';BITS.forEach((bit,i)=>{const d=document.createElement('div');
+    d.className='bit'+(bit?' one':'');d.innerHTML=`<b>${bit}</b><small>${i+1}</small>`;
+    d.addEventListener('click',()=>{BITS[i]=bit?0:1;rebuild();renderBits();drawWave(carrier);
+      document.getElementById('verdict').innerHTML='bits changed — hide &amp; detect again';});bitsEl.appendChild(d);});}
+  // waveform
+  const wave=document.getElementById('wave'),wctx=wave.getContext('2d');
+  function drawWave(buf){const W=wave.width,H=wave.height;wctx.clearRect(0,0,W,H);
+    wctx.strokeStyle='rgba(111,116,192,.7)';wctx.lineWidth=1;wctx.beginPath();
+    const step=Math.floor(buf.length/W);for(let x=0;x<W;x++){const v=buf[x*step]||0;const y=H/2-v*(H/2*0.9);
+      if(x===0)wctx.moveTo(x,y);else wctx.lineTo(x,y);}wctx.stroke();
+    // segment dividers
+    wctx.strokeStyle='rgba(154,152,166,.18)';for(let s=1;s<BITS.length;s++){const x=(s*SEG/buf.length)*W;
+      wctx.beginPath();wctx.moveTo(x,0);wctx.lineTo(x,H);wctx.stroke();}}
+
+  document.getElementById('clean').addEventListener('click',()=>{play(carrier);
+    document.getElementById('verdict').textContent='▶ clean carrier — no mark';drawWave(carrier);});
+  document.getElementById('marked').addEventListener('click',()=>{play(marked);
+    document.getElementById('verdict').innerHTML='▶ marked carrier — sounds identical, but the mark is in there';drawWave(marked);});
+  document.getElementById('detect').addEventListener('click',()=>{const r=detect(marked,BITS.length);
+    const ok=r.bits.join('')===BITS.join('');
+    document.getElementById('verdict').innerHTML=
+      `embedded&nbsp; <b>${BITS.join(' ')}</b><br>recovered <b>${r.bits.join(' ')}</b> &nbsp; `+
+      (ok?'<b>✓ mark intact</b>':'<span class="x">✗ corrupted</span>');
+    drawWave(marked);});
+
+  rebuild();renderBits();drawWave(carrier);
+  // expose for verification
+  window.__steg={buildCarrier,embed,detect,SEG};
+})();
+</script>
+</body>
+</html>
