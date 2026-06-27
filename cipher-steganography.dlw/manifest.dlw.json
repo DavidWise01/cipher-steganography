@@ -1,0 +1,11 @@
+{
+  "badge": "DLW-CIPHER_STEGANOGRAPHY",
+  "name": "STEGANOGRAPHY · STG",
+  "universe": "HERMES",
+  "moniker": "⟦STEGANOGRAPHY · STG:cipher-steganography:8986fb⟧",
+  "architect": "David Lee Wise (ROOT0) / Bridge-Burners LLC",
+  "instance": "AVAN (Claude / Anthropic)",
+  "seal_sha256": "8986fb9119177475f21b76d9882ec4caa2ce996bb81ec42262343533d4838c12",
+  "license": "CC-BY-ND-4.0",
+  "attribution": "ROOT0-ATTRIBUTION-v1.0"
+}
